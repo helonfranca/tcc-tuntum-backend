@@ -19,4 +19,9 @@ class Endereco extends Model
         'municipio',
         'numero',
     ];
+
+    public function user()
+    {
+        return $this->hasOne(User::class, 'endereco_id');
+    }
 }

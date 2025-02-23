@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\LoginRequest;
-use App\Http\Requests\RegisterRequest;
-use App\Http\Resources\UsuarioResource;
+use App\Http\Requests\UserRequest;
+use App\Http\Resources\UserResource;
 use App\Http\Services\AuthService;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Hash;
@@ -21,13 +21,13 @@ class AuthController extends Controller
         $this->authService = $authService;
     }
 
-    public function register(RegisterRequest $request): JsonResponse
+    public function register(UserRequest $request): JsonResponse
     {
         $usuario = $this->authService->register($request->validated());
         $token = $usuario->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'usuario' => new UsuarioResource($usuario),
+            'usuario' => new UserResource($usuario),
             'token' => $token,
         ], 201);
     }
@@ -43,7 +43,7 @@ class AuthController extends Controller
         $token = $usuario->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'usuario' => new UsuarioResource($usuario),
+            'usuario' => new UserResource($usuario),
             'token' => $token,
         ]);
     }
