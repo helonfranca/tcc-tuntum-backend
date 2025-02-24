@@ -60,24 +60,20 @@ class AuthService
 
     public function sendResetLink($email)
     {
-        // Envia o link de redefinição usando a classe Password do Laravel
-        $status = Password::sendResetLink(['email' => $email]);
+        // Encontre o usuário pelo e-mail
+        $user = User::where('email', $email)->first();
 
-        // Se o link foi enviado com sucesso, envia o e-mail personalizado
-        if ($status === Password::RESET_LINK_SENT) {
-            // Encontre o usuário
-            $user = User::where('email', $email)->first();
-
-            // Se o usuário for encontrado, gere o token e envie o e-mail
-            if ($user) {
-                $token = \Illuminate\Support\Facades\Password::createToken($user);
-
-                // Envia o e-mail personalizado com o token
-                Mail::to($email)->send(new ResetPasswordMail($token, $email));
-            }
+        if (!$user) {
+            return Password::INVALID_USER;
         }
 
-        return $status;
+        // Gera o token de redefinição de senha
+        $token = Password::createToken($user);
+
+        // Envia o e-mail personalizado
+        Mail::to($email)->send(new ResetPasswordMail($token, $email));
+
+        return Password::RESET_LINK_SENT;
     }
 
     public function resetPassword(array $data): string
