@@ -25,4 +25,13 @@ class ForgotPasswordRequest extends FormRequest
             'email' => 'required|email|exists:users,email'
         ];
     }
+
+    public function messages()
+    {
+        return [
+            'email.exists' => 'O e-mail informado não foi encontrado.',
+            'email.required' => 'O campo e-mail é obrigatório.',
+            'email.email' => 'Informe um e-mail válido.',
+        ];
+    }
 }

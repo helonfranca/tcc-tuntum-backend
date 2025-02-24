@@ -33,11 +33,7 @@ class UserController extends Controller
 
     public function show($id): JsonResponse
     {
-        $usuario = $this->userService->showUser($id);
-
-        return response()->json([
-            'user' => new UserResource($usuario)
-        ]);
+        return $this->userService->showUser($id);
     }
 
     public function update(UserRequest $request, $id): JsonResponse
@@ -52,9 +48,6 @@ class UserController extends Controller
 
     public function destroy($id): JsonResponse
     {
-        $this->userService->deleteUser($id);
-        return response()->json([
-            'message' => 'Usuário deletado com sucesso'
-        ], 204);
+        return $this->userService->deleteUser($id);
     }
 }

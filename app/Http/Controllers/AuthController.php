@@ -37,7 +37,9 @@ class AuthController extends Controller
         $usuario = $this->authService->login($request->validated());
 
         if (!$usuario) {
-            return response()->json(['message' => 'Credenciais inválidas'], 401);
+            return response()->json([
+                'message' => 'Credenciais inválidas'
+            ], 401);
         }
 
         $token = $usuario->createToken('auth_token')->plainTextToken;
@@ -60,8 +62,8 @@ class AuthController extends Controller
         $status = $this->authService->sendResetLink($request->email);
 
         return $status === Password::RESET_LINK_SENT
-            ? response()->json(['message' => 'E-mail enviado.'])
-            : response()->json(['error' => 'Erro ao enviar e-mail.'], 400);
+            ? response()->json(['message' => 'E-mail de redefinição enviado com sucesso.'])
+            : response()->json(['error' => 'E-mail não encontrado ou erro ao enviar.'], 400);
     }
 
     public function resetPassword(ResetPasswordRequest $request): JsonResponse

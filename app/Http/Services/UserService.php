@@ -2,20 +2,29 @@
 
 namespace App\Http\Services;
 
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\Endereco;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 
-class UserService{
+class UserService
+{
 
-    public function showUser($id){
+    public function showUser($id): JsonResponse
+    {
         $usuario = User::find($id);
+
         if (!$usuario) {
             return response()->json(['message' => 'Usuário não encontrado'], 404);
         }
 
-        return $usuario;
+        // Retorna a resposta com o usuário formatado pela resource
+        return response()->json([
+            'user' => new UserResource($usuario)
+        ]);
     }
+
     public function createUser(array $data): User
     {
         $endereco = Endereco::create([
@@ -54,12 +63,23 @@ class UserService{
         return $usuario;
     }
 
-    public function deleteUser($id): void
+    public function deleteUser($id): JsonResponse
     {
         $usuario = User::find($id);
+
+        if (!$usuario) {
+            return response()->json([
+                'message' => 'Usuário não encontrado'
+            ], 404);
+        }
+
         $usuario->delete();
         if ($usuario->endereco) {
             $usuario->endereco->delete();
         }
+
+        return response()->json([
+            'message' => 'Usuário deletado com sucesso'
+        ], 204);
     }
 }
