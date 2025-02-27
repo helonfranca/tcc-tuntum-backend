@@ -2,6 +2,7 @@
 
 namespace App\Http\Services;
 
+use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\Endereco;
@@ -10,76 +11,124 @@ use Illuminate\Support\Facades\Hash;
 
 class UserService
 {
+    protected EnderecoService $enderecoService;
+
+    public function __construct(EnderecoService $enderecoService)
+    {
+        $this->enderecoService = $enderecoService;
+    }
+
+    public function listUser()
+    {
+        try {
+            $usuarios = User::with('endereco')
+                ->where('tipo_usuario_id', '!=', 1)
+                ->paginate(10);
+            return UserResource::collection($usuarios);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao listar usuários.'], 500);
+        }
+    }
 
     public function showUser($id): JsonResponse
     {
-        $usuario = User::find($id);
+        try {
+            $usuario = User::find($id);
 
-        if (!$usuario) {
-            return response()->json(['message' => 'Usuário não encontrado'], 404);
+            if (!$usuario) {
+                return response()->json(['message' => 'Usuário não encontrado'], 404);
+            }
+
+            return response()->json([
+                'user' => new UserResource($usuario)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao buscar Usuário.'], 500);
         }
-
-        // Retorna a resposta com o usuário formatado pela resource
-        return response()->json([
-            'user' => new UserResource($usuario)
-        ]);
     }
 
-    public function createUser(array $data): User
+    public function createUser(UserRequest $data): JsonResponse
     {
-        $endereco = Endereco::create([
-            'cep' => $data['cep'],
-            'rua' => $data['rua'],
-            'bairro' => $data['bairro'],
-            'estado' => $data['estado'],
-            'municipio' => $data['municipio'],
-            'numero' => $data['numero'],
-        ]);
-        $data['password'] = Hash::make($data['password']);
-        $data['endereco_id'] = $endereco->id;
+        try {
+            $data = $data->validated();
 
-        return User::create($data);
-    }
+            $endereco = $this->enderecoService->create($data);
 
-    public function updateUser($id, array $data): User
-    {
-        $usuario = User::find($id);
-        $usuario->endereco->update([
-            'cep' => $data['cep'],
-            'rua' => $data['rua'],
-            'bairro' => $data['bairro'],
-            'estado' => $data['estado'],
-            'municipio' => $data['municipio'],
-            'numero' => $data['numero'],
-        ]);
 
-        // Atualiza o usuário
-        if (isset($data['password'])) {
             $data['password'] = Hash::make($data['password']);
+            $data['endereco_id'] = $endereco->id;
+
+            $usuario = User::create($data);
+
+            return response()->json([
+                'message' => 'Usuário criado com sucesso',
+                'data' => new UserResource($usuario)
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao criar Usuário.'], 500);
         }
+    }
 
-        $usuario->update($data);
+    public function updateUser($id, UserRequest $data): JsonResponse
+    {
+        try {
 
-        return $usuario;
+            $usuario = User::find($id);
+
+            if (!$usuario) {
+                return response()->json(['message' => 'Usuário não encontrado'], 404);
+            }
+
+            $data = $data->validated();
+
+            $usuario->endereco->update([
+                'cep' => $data['cep'],
+                'rua' => $data['rua'],
+                'bairro' => $data['bairro'],
+                'estado' => $data['estado'],
+                'municipio' => $data['municipio'],
+                'numero' => $data['numero'],
+            ]);
+
+            // Atualiza o usuário
+            if (isset($data['password'])) {
+                $data['password'] = Hash::make($data['password']);
+            }
+
+            $usuario->update($data);
+
+            return response()->json([
+                'message' => 'Usuário atualizado com sucesso',
+                'data' => new UserResource($usuario)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao criar Usuário.'], 500);
+        }
     }
 
     public function deleteUser($id): JsonResponse
     {
-        $usuario = User::find($id);
+        try {
+            $usuario = User::find($id);
 
-        if (!$usuario) {
+            if (!$usuario) {
+                return response()->json([
+                    'message' => 'Usuário não encontrado'
+                ], 404);
+            }
+
+            $usuario->delete();
+            if ($usuario->endereco) {
+                $usuario->endereco->delete();
+            }
+
             return response()->json([
-                'message' => 'Usuário não encontrado'
-            ], 404);
-        }
+                'message' => 'Usuário deletado com sucesso'
+            ], 204);
 
-        $usuario->delete();
-        if ($usuario->endereco) {
-            $usuario->endereco->delete();
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao Atualizar Usuário.'], 500);
         }
-
-        return response()->json([
-            'message' => 'Usuário deletado com sucesso'
-        ], 204);
     }
 }

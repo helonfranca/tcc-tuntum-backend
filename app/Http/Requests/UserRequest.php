@@ -13,7 +13,7 @@ class UserRequest extends FormRequest
 
     public function rules()
     {
-        $userId = $this->route('user');
+        $userId = $this->route('id');
 
         return [
             'nome' => 'required|string|max:255',
@@ -21,13 +21,9 @@ class UserRequest extends FormRequest
             'data_nascimento' => 'required|date',
             'email' => "required|string|email|max:255|unique:users,email,{$userId}",
             'sexo' => 'required|string|in:masculino,feminino,outro',
-
             'cpf' => "required|string|unique:users,cpf,{$userId}|regex:/^\d{3}\.\d{3}\.\d{3}-\d{2}$/",
             'telefone' => "required|string|unique:users,telefone,{$userId}|regex:/^\(\d{2}\) \d{4,5}-\d{4}$/",
-
             'tipo_usuario_id' => 'required|exists:tipo_usuario,id',
-
-            // Campos do endereço
             'cep' => 'nullable|string',
             'rua' => 'nullable|string',
             'bairro' => 'nullable|string',
