@@ -9,6 +9,11 @@ use Illuminate\Http\JsonResponse;
 
 class DoadorService
 {
+    /**
+     * Lista todos os doadores.
+     *
+     * @return JsonResponse
+     */
     public function listDoadores(): JsonResponse
     {
         try {
@@ -19,6 +24,12 @@ class DoadorService
         }
     }
 
+    /**
+     * Cria um novo doador.
+     *
+     * @param DoadorRequest $request
+     * @return JsonResponse
+     */
     public function createDoador(DoadorRequest $request): JsonResponse
     {
         try {
@@ -26,13 +37,13 @@ class DoadorService
             $doadorExistente = Doador::where('usuario_id', $dados['usuario_id'])->first();
 
             if ($doadorExistente) {
-                return response()->json(['error' => 'Este usuário já possui um cadastro de doador.'], 422);
+                return response()->json(['error' => 'Este usu rio j  possui um cadastro de doador.'], 422);
             }
 
-            // verifica se algum dos campos é true
+            // verifica se algum dos campos   true
             $inapto = $dados['malaria'] || $dados['hiv'] || $dados['droga_ilicita'] || $dados['hepatiteb'] || $dados['hepatitec'];
 
-            // define o valor de 'apto' com base na verificação
+            // define o valor de 'apto' com base na verifica o
             $dados['apto'] = !$inapto;
 
             $doador = Doador::create($dados);
@@ -44,13 +55,19 @@ class DoadorService
         }
     }
 
+    /**
+     * Exibe um doador pelo id.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     public function showDoador($id): JsonResponse
     {
         try {
             $doador = Doador::with(['user', 'tipoSanguineo'])->find($id);
 
             if (!$doador) {
-                return response()->json(['error' => 'Doador não encontrado.'], 404);
+                return response()->json(['error' => 'Doador n o encontrado.'], 404);
             }
 
             return response()->json(new DoadorResource($doador));
@@ -59,6 +76,13 @@ class DoadorService
         }
     }
 
+    /**
+     * Atualiza um doador existente pelo id.
+     *
+     * @param DoadorRequest $request
+     * @param int $id
+     * @return JsonResponse
+     */
     public function updateDoador(DoadorRequest $request, $id): JsonResponse
     {
         try {
@@ -85,6 +109,12 @@ class DoadorService
         }
     }
 
+    /**
+     * Remove um doador pelo id.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     public function deleteDoador($id): JsonResponse
     {
         try {

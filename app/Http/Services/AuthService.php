@@ -22,9 +22,9 @@ class AuthService
     }
 
     /**
-     * Registra um novo user e seu endereço.
+     * Registra um novo usuário e seu endereço.
      *
-     * @param array $$request
+     * @param UserRequest $request
      * @return JsonResponse
      */
     public function register(UserRequest $request): JsonResponse
@@ -59,7 +59,7 @@ class AuthService
     /**
      * Realiza o login do usuário.
      *
-     * @param array $request
+     * @param LoginRequest $request
      * @return JsonResponse
      */
     public function login(LoginRequest $request): JsonResponse
@@ -90,14 +90,20 @@ class AuthService
 
     }
 
-    public function sendResetLink($email)
+    /**
+     * Envia um e-mail com um link de redefinição de senha ao usuário.
+     *
+     * @param string $email
+     * @return JsonResponse
+     */
+    public function sendResetLink(String $email): JsonResponse
     {
         try {
             // Encontre o usuário pelo e-mail
             $user = User::where('email', $email)->first();
 
             if (!$user) {
-                return Password::INVALID_USER;
+                return response()->json(['error' => 'Usuário não encontrado.'], 404);
             }
 
             // Gera o token de redefinição de senha
@@ -115,6 +121,12 @@ class AuthService
         }
     }
 
+    /**
+     * Redefine a senha do usuário usando o token de redefinição.
+     *
+     * @param array $data
+     * @return JsonResponse
+     */
     public function resetPassword(array $data): JsonResponse
     {
         try {

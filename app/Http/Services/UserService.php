@@ -7,6 +7,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\Endereco;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Hash;
 
 class UserService
@@ -18,7 +19,12 @@ class UserService
         $this->enderecoService = $enderecoService;
     }
 
-    public function listUser()
+    /**
+     * Retorna uma lista de usuários com pagina o.
+     *
+     * @return JsonResponse|AnonymousResourceCollection
+     */
+    public function listUser(): JsonResponse|AnonymousResourceCollection
     {
         try {
             $usuarios = User::with('endereco')
@@ -30,7 +36,13 @@ class UserService
         }
     }
 
-    public function showUser($id): JsonResponse
+    /**
+     * Retorna um usuário específico.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function showUser(Int $id): JsonResponse
     {
         try {
             $usuario = User::find($id);
@@ -47,13 +59,18 @@ class UserService
         }
     }
 
+    /**
+     * Cria um novo usuário e seu endereço.
+     *
+     * @param UserRequest $data
+     * @return JsonResponse
+     */
     public function createUser(UserRequest $data): JsonResponse
     {
         try {
             $data = $data->validated();
 
             $endereco = $this->enderecoService->create($data);
-
 
             $data['password'] = Hash::make($data['password']);
             $data['endereco_id'] = $endereco->id;
@@ -70,6 +87,13 @@ class UserService
         }
     }
 
+    /**
+     * Atualiza um usuário e seu endereço.
+     *
+     * @param int $id
+     * @param UserRequest $data
+     * @return JsonResponse
+     */
     public function updateUser($id, UserRequest $data): JsonResponse
     {
         try {
@@ -103,10 +127,16 @@ class UserService
                 'data' => new UserResource($usuario)
             ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Erro ao criar Usuário.'], 500);
+            return response()->json(['error' => 'Erro ao atualizar Usuário.'], 500);
         }
     }
 
+    /**
+     * Exclui um usuário.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     public function deleteUser($id): JsonResponse
     {
         try {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UserRequest;
 use App\Http\Services\UserService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class UserController extends Controller
 {
@@ -15,7 +16,7 @@ class UserController extends Controller
         $this->userService = $userService;
     }
 
-    public function index()
+    public function index(): JsonResponse|AnonymousResourceCollection
     {
         return $this->userService->listUser();
     }
