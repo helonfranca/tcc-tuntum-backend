@@ -7,7 +7,7 @@ use App\Http\Requests\DoadorRequest;
 
 class DoadorController extends Controller
 {
-    protected $doadorService;
+    protected DoadorService $doadorService;
 
     public function __construct(DoadorService $doadorService)
     {

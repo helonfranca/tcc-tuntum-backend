@@ -2,86 +2,136 @@
 
 namespace App\Http\Services;
 
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\UserRequest;
+use App\Http\Resources\UserResource;
 use App\Mail\ResetPasswordMail;
 use App\Models\User;
-use App\Models\Endereco;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 
 class AuthService
 {
+    protected EnderecoService $enderecoService;
+
+    public function __construct(EnderecoService $enderecoService)
+    {
+        $this->enderecoService = $enderecoService;
+    }
+
     /**
      * Registra um novo user e seu endereço.
      *
-     * @param array $data
-     * @return User
+     * @param array $$request
+     * @return JsonResponse
      */
-    public function register(array $data): User
+    public function register(UserRequest $request): JsonResponse
     {
-        // Cria o endereço
-        $endereco = Endereco::create([
-            'cep' => $data['cep'],
-            'rua' => $data['rua'],
-            'bairro' => $data['bairro'],
-            'estado' => $data['estado'],
-            'municipio' => $data['municipio'],
-            'numero' => $data['numero'],
-        ]);
+        try {
+            $data = $request->validated();
 
-        // Criptografa a senha
-        $data['password'] = Hash::make($data['password']);
+            // Cria o endereço
+            $endereco = $this->enderecoService->create($data);
 
-        // Associa o endereço ao usuário
-        $data['endereco_id'] = $endereco->id;
+            // Criptografa a senha
+            $data['password'] = Hash::make($data['password']);
 
-        // Cria o usuário
-        return User::create($data);
+            // Associa o endereço ao usuário
+            $data['endereco_id'] = $endereco->id;
+
+            // Cria o usuário
+            $usuario = User::create($data);
+
+            $token = $usuario->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'usuario' => new UserResource($usuario),
+                'token' => $token,
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao criar usuário.'], 500);
+        }
     }
 
     /**
      * Realiza o login do usuário.
      *
-     * @param array $credentials
-     * @return User|null
+     * @param array $request
+     * @return JsonResponse
      */
-    public function login(array $credentials): ?User
+    public function login(LoginRequest $request): JsonResponse
     {
-        // Busca o usuário pelo email
-        $usuario = User::where('email', $credentials['email'])->first();
+        try {
+            $credentials = $request->validated();
 
-        // Verifica se o usuário existe e se a senha está correta
-        if (!$usuario || !Hash::check($credentials['password'], $usuario->password)) {
-            return null;
+            // Busca o usuário pelo email
+            $usuario = User::where('email', $credentials['email'])->first();
+
+            // Verifica se o usuário existe e se a senha está correta
+            if (!$usuario || !Hash::check($credentials['password'], $usuario->password)) {
+                return response()->json([
+                    'message' => 'Credenciais inválidas'
+                ], 401);
+            }
+
+            $token = $usuario->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'usuario' => new UserResource($usuario),
+                'token' => $token,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao criar usuário.'], 500);
         }
 
-        return $usuario;
     }
 
     public function sendResetLink($email)
     {
-        // Encontre o usuário pelo e-mail
-        $user = User::where('email', $email)->first();
+        try {
+            // Encontre o usuário pelo e-mail
+            $user = User::where('email', $email)->first();
 
-        if (!$user) {
-            return Password::INVALID_USER;
+            if (!$user) {
+                return Password::INVALID_USER;
+            }
+
+            // Gera o token de redefinição de senha
+            $token = Password::createToken($user);
+
+            // Envia o e-mail personalizado
+            Mail::to($email)->send(new ResetPasswordMail($token, $email));
+
+            return Password::RESET_LINK_SENT
+                ? response()->json(['message' => 'E-mail de redefinição enviado com sucesso.'])
+                : response()->json(['error' => 'E-mail não encontrado ou erro ao enviar.'], 400);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao enviar Link.'], 500);
         }
-
-        // Gera o token de redefinição de senha
-        $token = Password::createToken($user);
-
-        // Envia o e-mail personalizado
-        Mail::to($email)->send(new ResetPasswordMail($token, $email));
-
-        return Password::RESET_LINK_SENT;
     }
 
-    public function resetPassword(array $data): string
+    public function resetPassword(array $data): JsonResponse
     {
-        return Password::reset($data, function ($user, $password) {
-            $user->forceFill([
-                'password' => Hash::make($password),
-            ])->save();
-        });
+        try {
+            $status = Password::reset($data, function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                ])->save();
+            });
+
+            if ($status === Password::PASSWORD_RESET) {
+                return response()->json(['message' => 'Senha redefinida com sucesso.']);
+            }
+
+            return response()->json(['error' => 'Token inválido ou expirado.'], 400);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao redefinir senha.'], 500);
+        }
     }
 }
