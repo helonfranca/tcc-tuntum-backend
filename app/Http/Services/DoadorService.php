@@ -37,13 +37,13 @@ class DoadorService
             $doadorExistente = Doador::where('usuario_id', $dados['usuario_id'])->first();
 
             if ($doadorExistente) {
-                return response()->json(['error' => 'Este usu rio j  possui um cadastro de doador.'], 422);
+                return response()->json(['error' => 'Este usuário já possui um cadastro de doador.'], 422);
             }
 
             // verifica se algum dos campos   true
             $inapto = $dados['malaria'] || $dados['hiv'] || $dados['droga_ilicita'] || $dados['hepatiteb'] || $dados['hepatitec'];
 
-            // define o valor de 'apto' com base na verifica o
+            // define o valor de 'apto' com base na verificação
             $dados['apto'] = !$inapto;
 
             $doador = Doador::create($dados);
@@ -67,7 +67,7 @@ class DoadorService
             $doador = Doador::with(['user', 'tipoSanguineo'])->find($id);
 
             if (!$doador) {
-                return response()->json(['error' => 'Doador n o encontrado.'], 404);
+                return response()->json(['error' => 'Doador não encontrado.'], 404);
             }
 
             return response()->json(new DoadorResource($doador));
