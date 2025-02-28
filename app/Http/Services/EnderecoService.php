@@ -23,4 +23,19 @@ class EnderecoService
             'numero' => $data['numero'],
         ]);
     }
+
+    public function update(int $id, array $data): Endereco
+    {
+        $endereco = Endereco::findOrFail($id);
+        $endereco->update([
+            'cep' => $data['cep'],
+            'rua' => $data['rua'],
+            'bairro' => $data['bairro'],
+            'estado' => $data['estado'],
+            'municipio' => $data['municipio'],
+            'numero' => $data['numero'],
+        ]);
+
+        return $endereco;
+    }
 }
