@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\User;
+use App\Models\Hemocentro;
 
 class LoginRequest extends FormRequest
 {
@@ -22,15 +24,31 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => 'required|string|exists:users,email',
+            'email' => 'required|string',
             'password' => 'required|string',
         ];
+    }
+
+    /**
+     * Customizando a validação para verificar se o email existe em users ou hemocentros.
+     */
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $email = $this->input('email');
+
+            $existeUsuario = User::where('email', $email)->exists();
+            $existeHemocentro = Hemocentro::where('email', $email)->exists();
+
+            if (!$existeUsuario && !$existeHemocentro) {
+                $validator->errors()->add('email', 'Não existe nenhuma conta associada a esse e-mail.');
+            }
+        });
     }
 
     public function messages()
     {
         return [
-            'email.exists' => 'Não existe nenhuma conta associado a esse e-mail.',
             'email.required' => 'O campo e-mail é obrigatório.',
             'email.email' => 'Informe um e-mail válido.',
         ];

@@ -4,8 +4,10 @@ namespace App\Http\Services;
 
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\UserRequest;
+use App\Http\Resources\HemocentroResource;
 use App\Http\Resources\UserResource;
 use App\Mail\ResetPasswordMail;
+use App\Models\Hemocentro;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
@@ -44,6 +46,8 @@ class AuthService
             // Cria o usuário
             $usuario = User::create($data);
 
+            $usuario->load('endereco');
+
             $token = $usuario->createToken('auth_token')->plainTextToken;
 
             return response()->json([
@@ -67,27 +71,43 @@ class AuthService
         try {
             $credentials = $request->validated();
 
-            // Busca o usuário pelo email
+            // Verifica se é um usuário comum
             $usuario = User::where('email', $credentials['email'])->first();
+            $tipo = 'web'; // Padrão para usuário comum
 
-            // Verifica se o usuário existe e se a senha está correta
+            // Se não encontrou na tabela `users`, tenta na `hemocentros`
+            if (!$usuario) {
+                $usuario = Hemocentro::where('email', $credentials['email'])->first();
+                $tipo = 'hemocentro'; // Define como hemocentro
+            }
+
+            // Se não encontrar ou a senha estiver errada, retorna erro
             if (!$usuario || !Hash::check($credentials['password'], $usuario->password)) {
                 return response()->json([
                     'message' => 'Credenciais inválidas'
                 ], 401);
             }
 
-            $token = $usuario->createToken('auth_token')->plainTextToken;
+            // Cria um token com permissão baseada no tipo do usuário
+            $token = $usuario->createToken('auth_token', [$tipo])->plainTextToken;
+
+            // Carrega as relações necessárias com base no tipo de usuário
+            if ($tipo === 'web') {
+                $usuario->loadMissing('endereco');
+                $resource = new UserResource($usuario);
+            } else {
+                $usuario->loadMissing('endereco', 'funcionamentos.diasSemanas');
+                $resource = new HemocentroResource($usuario);
+            }
 
             return response()->json([
-                'usuario' => new UserResource($usuario),
+                'usuario' => $resource,
                 'token' => $token,
             ]);
 
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Erro ao criar usuário.'], 500);
+            return response()->json(['error' => 'Erro ao fazer login.'], 500);
         }
-
     }
 
     /**
