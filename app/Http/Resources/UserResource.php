@@ -23,14 +23,16 @@ class UserResource extends JsonResource
             'cpf' => $this->cpf,
             'telefone' => $this->telefone,
             'tipo_usuario_id' => $this->tipo_usuario_id,
-            'endereco' => $this->endereco ? [
-                'cep' => $this->endereco->cep,
-                'rua' => $this->endereco->rua,
-                'bairro' => $this->endereco->bairro,
-                'estado' => $this->endereco->estado,
-                'municipio' => $this->endereco->municipio,
-                'numero' => $this->endereco->numero,
-            ] : null,
+            'endereco' => $this->whenLoaded('endereco', function () {
+                return [
+                    'cep' => $this->endereco->cep,
+                    'rua' => $this->endereco->rua,
+                    'bairro' => $this->endereco->bairro,
+                    'estado' => $this->endereco->estado,
+                    'municipio' => $this->endereco->municipio,
+                    'numero' => $this->endereco->numero,
+                ];
+            }),
         ];
     }
 }

@@ -5,7 +5,6 @@ namespace App\Http\Services;
 use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Models\Endereco;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Hash;
@@ -30,7 +29,7 @@ class UserService
             $usuarios = User::with('endereco')
                 ->where('tipo_usuario_id', '!=', 1)
                 ->paginate(10);
-            return UserResource::collection($usuarios);
+            return UserResource::collection($usuarios->load('endereco'));
         } catch (\Exception $e) {
             return response()->json(['error' => 'Erro ao listar usuários.'], 500);
         }
@@ -42,7 +41,7 @@ class UserService
      * @param int $id
      * @return JsonResponse
      */
-    public function showUser(Int $id): JsonResponse
+    public function showUser(int $id): JsonResponse
     {
         try {
             $usuario = User::find($id);
@@ -52,7 +51,7 @@ class UserService
             }
 
             return response()->json([
-                'user' => new UserResource($usuario)
+                'user' => new UserResource($usuario->load('endereco'))
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Erro ao buscar Usuário.'], 500);
@@ -79,11 +78,11 @@ class UserService
 
             return response()->json([
                 'message' => 'Usuário criado com sucesso',
-                'data' => new UserResource($usuario)
+                'data' => new UserResource($usuario->load('endereco'))
             ], 201);
 
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Erro ao criar Usuário.'], 500);
+            return response()->json(['error' => 'Erro ao criar usuário.'], 500);
         }
     }
 
@@ -94,7 +93,7 @@ class UserService
      * @param UserRequest $data
      * @return JsonResponse
      */
-    public function updateUser($id, UserRequest $data): JsonResponse
+    public function updateUser(int $id, UserRequest $data): JsonResponse
     {
         try {
 
@@ -124,7 +123,7 @@ class UserService
 
             return response()->json([
                 'message' => 'Usuário atualizado com sucesso',
-                'data' => new UserResource($usuario)
+                'data' => new UserResource($usuario->load('endereco'))
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Erro ao atualizar Usuário.'], 500);
@@ -137,7 +136,7 @@ class UserService
      * @param int $id
      * @return JsonResponse
      */
-    public function deleteUser($id): JsonResponse
+    public function deleteUser(int $id): JsonResponse
     {
         try {
             $usuario = User::find($id);
@@ -158,7 +157,7 @@ class UserService
             ], 204);
 
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Erro ao Atualizar Usuário.'], 500);
+            return response()->json(['error' => 'Erro ao atualizar usuário.'], 500);
         }
     }
 }
