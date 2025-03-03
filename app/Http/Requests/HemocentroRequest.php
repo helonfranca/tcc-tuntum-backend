@@ -31,13 +31,13 @@ class HemocentroRequest extends FormRequest
             'estado' => 'string|max:45',
             'municipio' => 'string|max:45',
             'numero' => 'nullable|integer',
-            'img' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            //'img' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
 
             // Horários de funcionamento
-            'funcionamentos' => 'nullable|array',
+            'funcionamentos' => 'nullable',
             'funcionamentos.*.hora_abertura' => 'required_with:funcionamentos|date_format:H:i',
             'funcionamentos.*.hora_fechamento' => 'required_with:funcionamentos|date_format:H:i',
-            'funcionamentos.*.dias_semana' => 'required_with:funcionamentos|array',
+            'funcionamentos.*.dias_semana' => 'required_with:funcionamentos',
             'funcionamentos.*.dias_semana.*' => 'in:domingo,segunda-feira,terça-feira,quarta-feira,quinta-feira,sexta-feira,sábado',
         ];
     }
@@ -96,8 +96,7 @@ class HemocentroRequest extends FormRequest
 
             'numero.integer' => 'O número deve ser um valor inteiro.',
 
-            // Validação dos funcionamentos
-            'funcionamentos.array' => 'Os horários de funcionamento devem ser enviados como um array.',
+            // Validação dos funcionamento
             'funcionamentos.*.hora_abertura.required_with' => 'O horário de abertura é obrigatório para cada funcionamento.',
             'funcionamentos.*.hora_abertura.date_format' => 'O horário de abertura deve estar no formato HH:MM.',
             'funcionamentos.*.hora_fechamento.required_with' => 'O horário de fechamento é obrigatório para cada funcionamento.',

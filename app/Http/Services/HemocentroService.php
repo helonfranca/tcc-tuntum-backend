@@ -89,6 +89,11 @@ class HemocentroService
                 $data['img'] = $request->file('img')->store('hemocentros');
             }
 
+            // Verifica se 'funcionamentos' é uma string e decodifica
+            if (isset($data['funcionamentos']) && is_string($data['funcionamentos'])) {
+                $data['funcionamentos'] = json_decode($data['funcionamentos'], true);
+            }
+
             $hemocentro = Hemocentro::create($data);
 
             if (isset($data['funcionamentos'])) {
@@ -164,6 +169,11 @@ class HemocentroService
 
                 // Armazena a nova imagem
                 $data['img'] = $request->file('img')->store('hemocentros');
+            }
+
+            // Verifica se 'funcionamentos' é uma string e decodifica
+            if (isset($data['funcionamentos']) && is_string($data['funcionamentos'])) {
+                $data['funcionamentos'] = json_decode($data['funcionamentos'], true);
             }
 
             $hemocentro->update($data);
