@@ -78,18 +78,32 @@ class AuthService
             // Se não encontrou na tabela `users`, tenta na `hemocentros`
             if (!$usuario) {
                 $usuario = Hemocentro::where('email', $credentials['email'])->first();
-                $tipo = 'hemocentro'; // Define como hemocentro
+                if ($usuario) {
+                    // Se for um hemocentro, define o tipo como 'hemocentro'
+                    $tipo = 'hemocentro';
+                }
             }
 
             // Se não encontrar ou a senha estiver errada, retorna erro
             if (!$usuario || !Hash::check($credentials['password'], $usuario->password)) {
                 return response()->json([
-                    'message' => 'Credenciais inválidas'
+                    'message' => 'Credenciais inválidas. Por favor, verifique e tente novamente.'
                 ], 401);
             }
 
-            // Cria um token com permissão baseada no tipo do usuário
-            $token = $usuario->createToken('auth_token', [$tipo])->plainTextToken;
+            // Verifica o tipo de usuário: 'admin' ou 'user' caso seja um usuário comum
+            if ($tipo === 'web') {
+                $tipoUsuario = $usuario->tipo_usuario_id == 1 ? 'admin' : 'user'; // 1 é admin, 2 é user comum
+            } else {
+                // Para hemocentro, pode não haver necessidade de 'admin' ou 'user', apenas 'hemocentro'
+                $tipoUsuario = 'hemocentro';
+            }
+
+            // Define o tempo de expiração do token com base no "Lembrar de mim"
+            $expiration = $request->rememberMe ? now()->addDays(30) : now()->addHour();
+
+            // Cria um token com permissão baseada no tipo do usuário e tempo de expiração
+            $token = $usuario->createToken('auth_token', [$tipoUsuario], $expiration)->plainTextToken;
 
             // Carrega as relações necessárias com base no tipo de usuário
             if ($tipo === 'web') {
@@ -101,6 +115,7 @@ class AuthService
             }
 
             return response()->json([
+                'type' => $tipoUsuario, // Tipo dinâmico: admin, user ou hemocentro
                 'usuario' => $resource,
                 'token' => $token,
             ]);

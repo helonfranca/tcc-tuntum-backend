@@ -24,8 +24,9 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => 'required|string',
+            'email' => 'required|string|email', // Adicionei a validação de e-mail
             'password' => 'required|string',
+            'rememberMe' => 'boolean', // Adicionei a validação para rememberMe
         ];
     }
 
@@ -51,6 +52,8 @@ class LoginRequest extends FormRequest
         return [
             'email.required' => 'O campo e-mail é obrigatório.',
             'email.email' => 'Informe um e-mail válido.',
+            'password.required' => 'O campo senha é obrigatório.',
+            'rememberMe.boolean' => 'O campo "Lembrar de mim" deve ser verdadeiro ou falso.',
         ];
     }
 }
