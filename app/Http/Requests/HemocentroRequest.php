@@ -21,7 +21,7 @@ class HemocentroRequest extends FormRequest
             'nome' => 'required|string|max:255',
             'cnes' => "required|string|unique:hemocentro,cnes,{$hemocentroId}|max:45",
             'email' => "required|string|email|max:255|unique:hemocentro,email,{$hemocentroId}",
-            'password' => $isUpdate ? 'required|string|min:8' : 'nullable|string|min:8',
+            'password' => $isUpdate ? 'sometimes|nullable|string|min:8' : 'string|min:8',
             'telefone' => "required|string|unique:hemocentro,telefone,{$hemocentroId}|regex:/^\(\d{2}\) \d{4,5}-\d{4}$/",
 
             // Dados do endereço
@@ -63,7 +63,6 @@ class HemocentroRequest extends FormRequest
             'email.unique' => 'O e-mail informado já está em uso por outro hemocentro.',
 
             // Validação da senha
-            'password.required' => 'O campo senha é obrigatório.',
             'password.string' => 'A senha deve ser um texto.',
             'password.min' => 'A senha deve ter no mínimo 8 caracteres.',
 
