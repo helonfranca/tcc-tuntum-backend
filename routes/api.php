@@ -28,7 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('tipos-sanguineos', TipoSanguineoController::class)->only(['index']);
 
     // Rotas para DoadorController
-    Route::get('/doadores', [DoadorController::class, 'index'])->middleware('check.user.type:1');
+    Route::get('/doadores', [DoadorController::class, 'index']);
     Route::post('/doadores', [DoadorController::class, 'store']);
     Route::get('/doadores/{id}', [DoadorController::class, 'show']);
     Route::put('/doadores/{id}', [DoadorController::class, 'update'])->middleware('check.user.type:1');
