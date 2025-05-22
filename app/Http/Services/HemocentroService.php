@@ -86,7 +86,7 @@ class HemocentroService
             // Upload da imagem (se existir)
             if ($request->hasFile('img')) {
                 // Armazena no diretório 'hemocentros' dentro de 'storage/app'
-                $data['img'] = $request->file('img')->store('hemocentros');
+                $data['img'] = $request->file('img')->store('hemocentros', 'public');
             }
 
             // Verifica se 'funcionamentos' é uma string e decodifica
@@ -155,7 +155,10 @@ class HemocentroService
 
             $data['endereco_id'] = $endereco->id;
 
-            if (isset($data['password'])) {
+            // Remove o campo password se não foi enviado
+            if (empty($data['password'])) {
+                unset($data['password']);
+            } else {
                 $data['password'] = Hash::make($data['password']);
             }
 
@@ -168,7 +171,7 @@ class HemocentroService
                 }
 
                 // Armazena a nova imagem
-                $data['img'] = $request->file('img')->store('hemocentros');
+                $data['img'] = $request->file('img')->store('hemocentros', 'public');
             }
 
             // Verifica se 'funcionamentos' é uma string e decodifica
