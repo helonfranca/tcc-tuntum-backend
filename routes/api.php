@@ -6,6 +6,8 @@ use App\Http\Controllers\TipoSanguineoController;
 use App\Http\Controllers\HemocentroController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DemandaController;
+use App\Http\Controllers\DoacaoController;
 
 // Rotas para AuthController
 Route::post('/password/email', [AuthController::class, 'sendResetLink']);
@@ -40,5 +42,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/hemocentros/{id}', [HemocentroController::class, 'show']);
     Route::put('/hemocentros/{id}', [HemocentroController::class, 'update']);
     Route::delete('/hemocentros/{id}', [HemocentroController::class, 'destroy']);
+
+    // Rotas para DemandaController
+    Route::get('/demandas', [DemandaController::class, 'index']);
+    Route::post('/demandas', [DemandaController::class, 'store']);
+    Route::get('/demandas/{id}', [DemandaController::class, 'show']);
+    Route::put('/demandas/{id}', [DemandaController::class, 'update']);
+    Route::delete('/demandas/{id}', [DemandaController::class, 'destroy']);
+
+    // Rotas para DoacaoController
+    Route::get('/doacoes', [DoacaoController::class, 'index']);
+    Route::post('/doacoes', [DoacaoController::class, 'store']);
+    Route::get('/doacoes/{id}', [DoacaoController::class, 'show']);
+    Route::put('/doacoes/{id}', [DoacaoController::class, 'update']);
+    Route::delete('/doacoes/{id}', [DoacaoController::class, 'destroy']);
+
+    Route::get('/proximaDoacao', [DoacaoController::class, 'proximaDoacaoDisponivel']);
+
 
 });
