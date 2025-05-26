@@ -186,40 +186,100 @@ class DoacaoService
     {
         try {
             $usuario = auth()->user();
-
-            $doador = Doador::where('usuario_id', $usuario->id)
-                ->with('user')
-                ->first();
+            $doador = $this->getDoador($usuario->id);
 
             if (!$doador) {
-                return response()->json(['error' => 'Doador não encontrado.'], 404);
+                return $this->responseDoadorNaoEncontrado();
             }
 
-            $ultimaDoacao = Doacao::where('doador_id', $doador->id)
-                ->where('status', 'confirmada')
-                ->latest('updated_at')
-                ->first();
+            if ($this->isDoadorInapto($doador)) {
+                return $this->responseInaptidao();
+            }
+
+            $ultimaDoacao = $this->getUltimaDoacao($doador->id);
 
             if (!$ultimaDoacao) {
-                return response()->json([
-                    'mensagem' => 'Você está apto para doar! Encontre um hemocentro próximo e faça a diferença!.',
-                    'pode_doar_hoje' => true
-                ]);
+                return $this->responseAptoParaDoar();
             }
 
-            $intervaloMinimo = $doador->user->sexo === 'feminino' ? 90 : 60;
-            $dataProxima = $ultimaDoacao->updated_at->copy()->addDays($intervaloMinimo);
-            $hoje = Carbon::now();
-            $diasRestantes = (int)max(0, $hoje->diffInDays($dataProxima, false));
-
-            return response()->json([
-                'data_proxima_doacao' => $dataProxima->format('d/m/Y'),
-                'dias_restantes' => $diasRestantes,
-                'pode_doar_hoje' => $diasRestantes <= 0,
-            ]);
+            return $this->verificarIntervaloDoacao($doador, $ultimaDoacao);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Erro ao verificar próxima doação.'], 500);
         }
     }
 
+    private function getDoador(int $usuarioId)
+    {
+        return Doador::where('usuario_id', $usuarioId)
+            ->with('user')
+            ->first();
+    }
+
+    private function responseDoadorNaoEncontrado(): JsonResponse
+    {
+        return response()->json(['error' => 'Doador não encontrado.'], 404);
+    }
+
+    private function isDoadorInapto($doador): bool
+    {
+        return $doador->apto === 0;
+    }
+
+    private function responseInaptidao(): JsonResponse
+    {
+        return response()->json([
+            'mensagem' => 'Você não está apto para doar no momento devido a condições de saúde preexistentes ou outras restrições.',
+            'pode_doar_hoje' => false,
+            'tipo_inaptidao' => 'restricao_permanente_ou_longa_duracao'
+        ]);
+    }
+
+    private function getUltimaDoacao(int $doadorId)
+    {
+        return Doacao::where('doador_id', $doadorId)
+            ->where('status', 'confirmada')
+            ->latest('updated_at')
+            ->first();
+    }
+
+    private function responseAptoParaDoar(): JsonResponse
+    {
+        return response()->json([
+            'mensagem' => 'Você está apto para doar! Encontre um hemocentro próximo e faça a diferença!.',
+            'pode_doar_hoje' => true
+        ]);
+    }
+
+    private function verificarIntervaloDoacao($doador, $ultimaDoacao): JsonResponse
+    {
+        $intervaloMinimo = $doador->user->sexo === 'feminino' ? 90 : 60;
+        $dataProxima = $ultimaDoacao->updated_at->copy()->addDays($intervaloMinimo);
+        $hoje = Carbon::now();
+        $diasRestantes = max(0, $hoje->diffInDays($dataProxima, false));
+
+        if ($diasRestantes <= 0) {
+            return $this->responsePodeDoar();
+        }
+
+        return $this->responseAguardarIntervalo($dataProxima, $diasRestantes);
+    }
+
+    private function responsePodeDoar(): JsonResponse
+    {
+        return response()->json([
+            'mensagem' => 'Você cumpriu o intervalo e está apto para doar novamente! Sua ajuda é essencial.',
+            'pode_doar_hoje' => true
+        ]);
+    }
+
+    private function responseAguardarIntervalo($dataProxima, $diasRestantes): JsonResponse
+    {
+        return response()->json([
+            'data_proxima_doacao' => $dataProxima->format('d/m/Y'),
+            'dias_restantes' => $diasRestantes,
+            'pode_doar_hoje' => false,
+            'tipo_inaptidao' => 'intervalo_entre_doacoes',
+            'mensagem' => "Você precisa aguardar o intervalo mínimo para doar novamente."
+        ]);
+    }
 }
