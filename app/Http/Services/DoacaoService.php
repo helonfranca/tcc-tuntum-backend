@@ -255,7 +255,7 @@ class DoacaoService
         $intervaloMinimo = $doador->user->sexo === 'feminino' ? 90 : 60;
         $dataProxima = $ultimaDoacao->updated_at->copy()->addDays($intervaloMinimo);
         $hoje = Carbon::now();
-        $diasRestantes = max(0, $hoje->diffInDays($dataProxima, false));
+        $diasRestantes = (int) max(0, $hoje->diffInDays($dataProxima, false));
 
         if ($diasRestantes <= 0) {
             return $this->responsePodeDoar();
