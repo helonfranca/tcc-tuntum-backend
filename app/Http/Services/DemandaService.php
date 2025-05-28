@@ -6,6 +6,7 @@ use App\Models\Demanda;
 use App\Models\Doador;
 use App\Http\Resources\DemandaResource;
 use App\Http\Requests\DemandaRequest;
+use App\Models\TipoSanguineo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -13,6 +14,7 @@ use App\Mail\NovaDemandaEmail;
 
 class DemandaService
 {
+
     /**
      * Lista todas as demandas, com opção de filtrar por tipo sanguíneo.
      *
@@ -25,11 +27,21 @@ class DemandaService
             $query = Demanda::with(['tipoSanguineo', 'hemocentro']);
 
             if (request()->has('tipo_sanguineo')) {
-                $tipo = request('tipo_sanguineo');
+                $tipoDoador = request('tipo_sanguineo');
+                $tiposReceptoresCompativeis = $this->getTiposReceptoresCompativeis($tipoDoador);
 
-                $query->whereHas('tipoSanguineo', function ($q) use ($tipo) {
-                    $q->where('tipofator', $tipo);
-                });
+                if (!empty($tiposReceptoresCompativeis)) {
+                    $query->whereHas('tipoSanguineo', function ($q) use ($tiposReceptoresCompativeis) {
+                        $q->whereIn('tipofator', $tiposReceptoresCompativeis);
+                    });
+                } else {
+                    return response()->json(DemandaResource::collection([]));
+                }
+            }
+
+            if (request()->has('hemocentro_id')) {
+                $hemocentroId = request('hemocentro_id');
+                $query->where('hemocentro_id', $hemocentroId);
             }
 
             $demandas = DemandaResource::collection($query->get());
@@ -147,13 +159,80 @@ class DemandaService
      */
     protected function notificarDoadores(Demanda $demanda): void
     {
+        if (!$demanda->tipoSanguineo) {
+            return;
+        }
+
+        $tipoReceptor = $demanda->tipoSanguineo->tipofator;
+        $tiposDoadoresCompativeisStrings = $this->getTiposDoadoresCompativeisParaReceptor($tipoReceptor);
+
+        if (empty($tiposDoadoresCompativeisStrings)) {
+            return;
+        }
+
+        // Buscar os IDs dos tipos sanguíneos dos doadores compatíveis
+        $idsTiposSanguineosDoadores = TipoSanguineo::whereIn('tipofator', $tiposDoadoresCompativeisStrings)
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($idsTiposSanguineosDoadores)) {
+            return;
+        }
+
+        // 3. Buscar os doadores aptos com os tipos sanguíneos compatíveis
         $doadores = Doador::with(['user', 'tipoSanguineo'])
-            ->where('tipo_sanguineo_id', $demanda->tipo_sanguineo_id)
+            ->whereIn('tipo_sanguineo_id', $idsTiposSanguineosDoadores)
             ->where('apto', true)
             ->get();
 
         foreach ($doadores as $doador) {
-            Mail::to($doador->user->email)->send(new NovaDemandaEmail($demanda, $doador));
+            if ($doador->user && $doador->user->email) {
+                Mail::to($doador->user->email)->send(new NovaDemandaEmail($demanda, $doador));
+            }
         }
+    }
+
+    /**
+     * Retorna uma lista de tipos sanguíneos que podem receber do tipo doador especificado.
+     *
+     * @param string $tipoDoador O tipo sanguíneo do doador (ex: "A+", "O-")
+     * @return array Lista de tipos sanguíneos receptores compatíveis.
+     */
+    private function getTiposReceptoresCompativeis(string $tipoDoador): array
+    {
+        $compatibilidade = [
+            'O-' => ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'],
+            'O+' => ['O+', 'A+', 'B+', 'AB+'],
+            'A-' => ['A-', 'A+', 'AB-', 'AB+'],
+            'A+' => ['A+', 'AB+'],
+            'B-' => ['B-', 'B+', 'AB-', 'AB+'],
+            'B+' => ['B+', 'AB+'],
+            'AB-' => ['AB-', 'AB+'],
+            'AB+' => ['AB+'],
+        ];
+
+        return $compatibilidade[$tipoDoador] ?? [];
+    }
+
+    /**
+     * Retorna uma lista de 'tipofator' de tipos sanguíneos que podem doar para o tipo receptor especificado.
+     *
+     * @param string $tipoReceptor O 'tipofator' do sangue da demanda (receptor).
+     * @return array Lista de 'tipofator' de doadores compatíveis.
+     */
+    private function getTiposDoadoresCompativeisParaReceptor(string $tipoReceptor): array
+    {
+        $compatibilidade = [
+            'O-'  => ['O-'],
+            'O+'  => ['O-', 'O+'],
+            'A-'  => ['O-', 'A-'],
+            'A+'  => ['O-', 'O+', 'A-', 'A+'],
+            'B-'  => ['O-', 'B-'],
+            'B+'  => ['O-', 'O+', 'B-', 'B+'],
+            'AB-' => ['O-', 'A-', 'B-', 'AB-'],
+            'AB+' => ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'],
+        ];
+
+        return $compatibilidade[$tipoReceptor] ?? [];
     }
 }
