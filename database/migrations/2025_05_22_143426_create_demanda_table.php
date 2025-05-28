@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('demanda', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tipo_sanguineo_id')->constrained('tipo_sanguineo');
-            $table->foreignId('hemocentro_id')->constrained('hemocentro');
+            $table->foreignId('tipo_sanguineo_id')->constrained('tipo_sanguineo')->OnDelete('cascade');;
+            $table->foreignId('hemocentro_id')->constrained('hemocentro')->OnDelete('cascade');;
             $table->enum('status',['aberta','finalizada'])->default('aberta');
             $table->date('data_inicial');
             $table->date('data_final')->nullable();

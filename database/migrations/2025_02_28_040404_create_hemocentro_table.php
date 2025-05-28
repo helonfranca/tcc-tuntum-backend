@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('img')->nullable();
             $table->string('password');
             $table->string('telefone');
-            $table->foreignId('endereco_id')->constrained('endereco');
+            $table->foreignId('endereco_id')->constrained('endereco')->OnDelete('cascade');
             $table->timestamps();
         });
     }

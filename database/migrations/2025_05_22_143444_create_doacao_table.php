@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->date('data_doacao');
             $table->float('quantidade');
-            $table->foreignId('doador_id')->constrained('doador');
+            $table->foreignId('doador_id')->constrained('doador')->OnDelete('cascade');
             $table->enum('status', ['pendente', 'confirmada'])->default('pendente');
-            $table->foreignId('demanda_id')->constrained('demanda');
+            $table->foreignId('demanda_id')->constrained('demanda')->OnDelete('cascade');
             $table->timestamps();
 
         });

@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('cpf', 45)->unique();
             $table->string('telefone', 45)->unique();
             $table->foreignId('tipo_usuario_id')->constrained('tipo_usuario');
-            $table->foreignId('endereco_id')->constrained('endereco');
+            $table->foreignId('endereco_id')->constrained('endereco')->OnDelete('cascade');;
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
