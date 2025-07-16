@@ -69,7 +69,7 @@
         <p><strong>Detalhes da demanda:</strong></p>
         <ul style="padding-left: 20px; margin: 10px 0;">
             <li>Status: {{ $demanda->status }}</li>
-            <li>Período: {{ ($demanda->data_inicial)->format('d/m/Y') }} com prazo até {{ ($demanda->data_final)->format('d/m/Y') ?? 'indefinido' }}</li>
+            <li>Período: {{ $demanda->data_inicial }} com prazo até {{ $demanda->data_final ?? 'indefinido' }}</li>
         </ul>
     </div>
 

@@ -24,7 +24,22 @@ class DemandaService
     public function listDemandas(): JsonResponse
     {
         try {
+            $user = auth()->user();
+            $isHemocentroUser = false;
+
             $query = Demanda::with(['tipoSanguineo', 'hemocentro']);
+
+            if ($user && isset($user->cnes) && !empty(trim($user->cnes))) {
+                $isHemocentroUser = true;
+            }
+
+            if (!$isHemocentroUser) {
+                $query->whereHas('hemocentro', function ($q) {
+                    $q->where('is_Active', 1);
+                });
+
+                $query->where('status', 'aberta');
+            }
 
             if (request()->has('tipo_sanguineo')) {
                 $tipoDoador = request('tipo_sanguineo');

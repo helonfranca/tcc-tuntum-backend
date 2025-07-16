@@ -21,6 +21,7 @@ class HemocentroResource extends JsonResource
             'email' => $this->email,
             'telefone' => $this->telefone,
             'img' => asset('storage/' . $this->img),
+            'is_active' => $this->is_active,
             'endereco' => $this->whenLoaded('endereco', function () {
                 return [
                     'cep' => $this->endereco->cep,

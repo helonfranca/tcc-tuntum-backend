@@ -32,6 +32,7 @@ class HemocentroRequest extends FormRequest
             'municipio' => 'string|max:45',
             'numero' => 'nullable|integer',
             //'img' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'is_active' => 'boolean|nullable',
 
             // Horários de funcionamento
             'funcionamentos' => 'nullable',

@@ -12,7 +12,7 @@ class Hemocentro extends Model
 
     protected $table = 'hemocentro';
     protected $fillable = [
-        'nome', 'cnes', 'email', 'password', 'telefone', 'endereco_id', 'img'
+        'nome', 'cnes', 'email', 'password', 'telefone', 'endereco_id', 'img', 'is_active'
     ];
 
     public function endereco()
